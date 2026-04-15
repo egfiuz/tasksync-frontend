@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskSync ADS</title>
+    
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+        :root {
+            --fundo-site: #121212;
+            --fundo-painel: #1E1E1E;
+            --texto-principal: #E8EAED;
+            --texto-secundario: #9AA0A6;
+            --azul-neon: #8AB4F8;
+            --borda: #3C4043;
+            --fundo-input: #202124;
+            --verde-ok: #81C995;
+        }
+
+        body {
+            background-color: var(--fundo-site);
+            color: var(--texto-principal);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .painel {
+            background: var(--fundo-painel);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--borda);
+        }
+
+        h1, h2, h3 { color: var(--azul-neon); margin-top: 0; }
+        p { color: var(--texto-secundario); }
+        hr { border-top: 1px solid var(--borda); border-bottom: none; margin: 1.5rem 0; }
+
+        input, textarea {
+            background-color: var(--fundo-input);
+            color: var(--texto-principal);
+            border: 1px solid var(--borda);
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            font-family: inherit;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--azul-neon);
+            box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.2);
+        }
+
+        button[type="submit"], .btn-acao {
+            background-color: var(--azul-neon);
+            color: #121212;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button[type="submit"]:hover, .btn-acao:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .cartao-tarefa {
+            background: var(--fundo-input);
+            padding: 18px;
+            border-radius: 12px;
+            border-left: 4px solid var(--verde-ok);
+            margin-bottom: 15px;
+            transition: transform 0.2s;
+        }
+        
+        .cartao-tarefa:hover {
+            transform: scale(1.02);
+            border-left: 4px solid var(--azul-neon);
+        }
+
+        .cartao-titulo { margin: 0 0 8px 0; color: var(--texto-principal); font-size: 18px;}
+        .cartao-meta { margin: 0 0 10px 0; font-size: 13px; color: var(--azul-neon); font-weight: 600; }
+        .cartao-desc { margin: 0; font-size: 14px; color: var(--texto-secundario); white-space: pre-wrap; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+    <button onclick="toggleMural()" style="position: fixed; right: 20px; bottom: 20px; background: var(--azul-neon); color: #121212; border: none; padding: 15px; border-radius: 50%; cursor: pointer; z-index: 1001; font-size: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.4);" title="Mural de Avisos">
+        🔔
+    </button>
+
+    <div id="mural_sidebar" style="position: fixed; right: -350px; top: 0; width: 300px; height: 100%; background: var(--fundo-painel); border-left: 1px solid var(--borda); transition: 0.4s ease; z-index: 1000; padding: 25px; box-shadow: -10px 0 30px rgba(0,0,0,0.5); overflow-y: auto;">
+        <h2>Mural FATEC</h2>
+        <p style="font-size: 13px;">Avisos rápidos que se auto-destroem.</p>
+        <hr>
+        
+        <textarea id="texto_boletim" placeholder="O que há de novo na faculdade?" style="resize: none; min-height: 80px;"></textarea>
+        <button onclick="postarNoMural()" class="btn-acao" style="background: var(--verde-ok); padding: 10px;">Postar Aviso</button>
+
+        <div id="container_boletins" style="margin-top: 30px; display: flex; flex-direction: column; gap: 15px;">
+            </div>
+    </div>
+    
+    <div id="area_login" class="painel" style="text-align: center;">
+        <h1>TaskSync ADS</h1>
+        <p>Sincronize suas entregas da FATEC em um só lugar.</p>
+        <hr>
+        <div id="g_id_onload"
+             data-client_id="648909581862-92hjjltj6udot3rff8quvuf3lke6vtan.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="filled_black" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
+    </div>
+
+    <div id="painel_tarefas" class="painel" style="display: none;">
+        <h2>Nova Tarefa</h2>
+        <p id="mensagem_boas_vindas"></p>
+        
+        <form id="form_tarefa">
+            <input type="text" id="titulo" placeholder="Título (ex: Projeto Integrador)" required>
+            <input type="text" id="disciplina" placeholder="Disciplina (ex: Banco de Dados)" required>
+            <textarea id="descricao" placeholder="Descrição da entrega..." required style="resize: vertical; min-height: 80px;"></textarea>
+            <input type="date" id="data_entrega" required>
+            <button type="submit">Salvar Tarefa</button>
+        </form>
+
+        <div id="secao_lista_tarefas" style="margin-top: 35px; border-top: 1px solid var(--borda); padding-top: 25px;">
+            <h3>Minhas Entregas</h3>
+            <div id="container_tarefas"></div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
