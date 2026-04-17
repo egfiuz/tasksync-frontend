@@ -4,7 +4,7 @@ let idTarefaEmEdicao = null;
 async function handleCredentialResponse(response) {
     const tokenJWT = response.credential;
     try {
-        const apiResponse = await fetch("http://127.0.0.1:8000/auth/google", {
+        const apiResponse = await fetch("https://tasksync-api-648909581862.southamerica-east1.run.app/auth/google", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: tokenJWT })
@@ -35,11 +35,11 @@ document.getElementById('form_tarefa').addEventListener('submit', async function
         data_entrega: document.getElementById('data_entrega').value
     };
 
-    let url = "http://127.0.0.1:8000/tarefas";
+    let url = "https://tasksync-api-648909581862.southamerica-east1.run.app/tarefas";
     let metodo = "POST";
 
     if (idTarefaEmEdicao) {
-        url = `http://127.0.0.1:8000/tarefas/${idTarefaEmEdicao}`;
+        url = `https://tasksync-api-648909581862.southamerica-east1.run.app/tarefas/${idTarefaEmEdicao}`;
         metodo = "PUT";
     }
 
@@ -68,7 +68,7 @@ document.getElementById('form_tarefa').addEventListener('submit', async function
 
 async function carregarTarefas() {
     try {
-        const resposta = await fetch("http://127.0.0.1:8000/tarefas", {
+        const resposta = await fetch("https://tasksync-api-648909581862.southamerica-east1.run.app/tarefas", {
             method: "GET",
             headers: { "Authorization": "Bearer " + tokenGlobal }
         });
@@ -89,12 +89,14 @@ async function carregarTarefas() {
 
                 cartao.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: start;">
-                        <h4 class="cartao-titulo">${tarefa.titulo}</h4>
-                        <div>
-                            <button onclick="prepararEdicao('${tarefa.id}', '${tarefa.titulo}', '${tarefa.disciplina}', '${tarefa.descricao.replace(/\n/g, '\\n')}', '${tarefa.data_entrega}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; margin-right: 12px; filter: grayscale(0.2);" title="Editar tarefa">✏️</button>
-                            <button onclick="deletarTarefa('${tarefa.id}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; filter: grayscale(0.2);" title="Excluir tarefa">🗑️</button>
-                        </div>
-                    </div>
+    <h4 class="cartao-titulo">${tarefa.titulo}</h4>
+    <div>
+        <button onclick="concluirTarefaNaNuvem('${tarefa.id}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; margin-right: 12px; filter: grayscale(0.2);" title="Concluir e enviar para IA">✅</button>
+        
+        <button onclick="prepararEdicao('${tarefa.id}', '${tarefa.titulo}', '${tarefa.disciplina}', '${tarefa.descricao.replace(/\n/g, '\\n')}', '${tarefa.data_entrega}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; margin-right: 12px; filter: grayscale(0.2);" title="Editar tarefa">✏️</button>
+        <button onclick="deletarTarefa('${tarefa.id}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; filter: grayscale(0.2);" title="Excluir tarefa">🗑️</button>
+    </div>
+</div>
                     <p class="cartao-meta">📚 ${tarefa.disciplina} | 📅 Entrega: ${dataFormatada}</p>
                     <p class="cartao-desc">${tarefa.descricao}</p>
                 `;
@@ -109,7 +111,7 @@ async function carregarTarefas() {
 async function deletarTarefa(idDaTarefa) {
     if (!confirm("Tem certeza que deseja excluir esta entrega?")) return; 
     try {
-        const resposta = await fetch(`http://127.0.0.1:8000/tarefas/${idDaTarefa}`, {
+        const resposta = await fetch(`https://tasksync-api-648909581862.southamerica-east1.run.app/tarefas/${idDaTarefa}`, {
             method: "DELETE",
             headers: { "Authorization": "Bearer " + tokenGlobal }
         });
@@ -159,7 +161,7 @@ async function postarNoMural() {
     }
 
     try {
-        const res = await fetch("http://127.0.0.1:8000/boletins", {
+        const res = await fetch("https://tasksync-api-648909581862.southamerica-east1.run.app/boletins", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: tokenGlobal, conteudo: texto })
@@ -200,4 +202,42 @@ async function carregarMural() {
             container.appendChild(div);
         });
     } catch (e) { console.error("Erro ao carregar mural:", e); }
+}
+
+// --- FUNÇÃO PARA CONCLUIR TAREFA NA NUVEM E ALIMENTAR A IA ---
+async function concluirTarefaNaNuvem(tarefaId) {
+    // Usando o SEU token global impecável
+    if (!tokenGlobal) {
+        alert("Você precisa estar logado para concluir uma tarefa!");
+        return;
+    }
+
+    try {
+        const resposta = await fetch(`https://tasksync-api-648909581862.southamerica-east1.run.app/tarefas/${tarefaId}/concluir`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                token: tokenGlobal
+            })
+        });
+
+        const dados = await resposta.json();
+
+        if (resposta.ok) {
+            console.log("Sucesso na IA:", dados.mensagem);
+            alert("Tarefa concluída! Dados preditivos enviados para o Google Cloud.");
+            
+            // Recarrega as tarefas para o card sumir da tela de pendentes!
+            carregarTarefas(); 
+        } else {
+            console.error("Erro da API:", dados.detail);
+            alert("Erro ao concluir: " + dados.detail);
+        }
+
+    } catch (erro) {
+        console.error("Erro de conexão:", erro);
+        alert("Erro de conexão com o servidor.");
+    }
 }

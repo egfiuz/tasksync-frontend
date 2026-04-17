@@ -2,7 +2,8 @@ import os
 from fastapi import FastAPI, HTTPException, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
 
 # Imports do Google Auth e Firestore
 from google.oauth2 import id_token
@@ -79,6 +80,9 @@ class NovaTarefa(BaseModel):
     descricao: str
     disciplina: str
     data_entrega: str
+
+class ConcluirTarefa(BaseModel):
+    token: str
 
 @app.post("/tarefas")
 async def criar_tarefa(dados: NovaTarefa):
@@ -174,7 +178,35 @@ async def atualizar_tarefa(tarefa_id: str, dados: NovaTarefa):
     except Exception as e:
         print(f"Erro ao atualizar: {e}")
         raise HTTPException(status_code=500, detail="Erro interno ao atualizar.")
-    
+
+@app.patch("/tarefas/{tarefa_id}/concluir")
+async def concluir_tarefa(tarefa_id: str, dados: ConcluirTarefa):
+    try:
+        # 1. Verifica o crachá do Google
+        idinfo = id_token.verify_oauth2_token(dados.token, requests.Request(), GOOGLE_CLIENT_ID)
+        email_do_aluno = idinfo['email']
+
+        # 2. Captura o momento exato em que o botão foi clicado
+        agora = datetime.now(timezone.utc)
+
+        # 3. Localiza a tarefa exata do aluno no Firestore
+        tarefa_ref = db.collection("alunos").document(email_do_aluno).collection("tarefas").document(tarefa_id)
+        
+        # 4. Atualiza o status e injeta a métrica final para a IA
+        tarefa_ref.update({
+            "status": "concluido",
+            "data_conclusao": agora.isoformat() 
+        })
+
+        print(f"✅ TAREFA CONCLUÍDA: ID {tarefa_id} finalizada por {email_do_aluno}")
+        return {"status": "sucesso", "mensagem": "Missão cumprida e dados registrados!"}
+
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Crachá inválido ou expirado.")
+    except Exception as e:
+        print(f"Erro ao concluir tarefa: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno ao atualizar o banco.")
+
 # --- ROTAS DO MURAL DE AVISOS (BOLETINS) ---
 class NovoBoletim(BaseModel):
     token: str
