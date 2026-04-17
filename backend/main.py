@@ -79,6 +79,7 @@ class NovaTarefa(BaseModel):
     titulo: str
     descricao: str
     disciplina: str
+    professor: str
     data_entrega: str
 
 class ConcluirTarefa(BaseModel):
@@ -95,6 +96,7 @@ async def criar_tarefa(dados: NovaTarefa):
             "descricao": dados.descricao,
             "disciplina": dados.disciplina,
             "data_entrega": dados.data_entrega,
+            "professor": dados.professor,
             "status": "pendente",
             "criado_em": firestore.SERVER_TIMESTAMP
         }

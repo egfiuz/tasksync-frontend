@@ -32,6 +32,7 @@ document.getElementById('form_tarefa').addEventListener('submit', async function
         titulo: document.getElementById('titulo').value,
         disciplina: document.getElementById('disciplina').value,
         descricao: document.getElementById('descricao').value,
+        professor: document.getElementById('professor').value,
         data_entrega: document.getElementById('data_entrega').value
     };
 
@@ -93,14 +94,15 @@ async function carregarTarefas() {
     <div>
         <button onclick="concluirTarefaNaNuvem('${tarefa.id}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; margin-right: 12px; filter: grayscale(0.2);" title="Concluir e enviar para IA">✅</button>
         
-        <button onclick="prepararEdicao('${tarefa.id}', '${tarefa.titulo}', '${tarefa.disciplina}', '${tarefa.descricao.replace(/\n/g, '\\n')}', '${tarefa.data_entrega}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; margin-right: 12px; filter: grayscale(0.2);" title="Editar tarefa">✏️</button>
+        <button onclick="prepararEdicao('${tarefa.id}', '${tarefa.titulo}', '${tarefa.disciplina}', '${tarefa.professor}', '${tarefa.descricao.replace(/\n/g, '\\n')}', '${tarefa.data_entrega}')" ...>✏️</button>
         <button onclick="deletarTarefa('${tarefa.id}')" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; filter: grayscale(0.2);" title="Excluir tarefa">🗑️</button>
     </div>
 </div>
-                    <p class="cartao-meta">📚 ${tarefa.disciplina} | 📅 Entrega: ${dataFormatada}</p>
-                    <p class="cartao-desc">${tarefa.descricao}</p>
-                `;
-                container.appendChild(cartao);
+                    <p class="cartao-meta">📚 ${tarefa.disciplina} | 👨‍🏫 Prof: ${tarefa.professor} | 📅 Entrega: ${dataFormatada}</p>
+            
+            <p class="cartao-desc">${tarefa.descricao}</p>
+        `;
+        container.appendChild(cartao);
             });
         }
     } catch (erro) {
@@ -121,10 +123,11 @@ async function deletarTarefa(idDaTarefa) {
     }
 }
 
-function prepararEdicao(id, titulo, disciplina, descricao, data_entrega) {
+function prepararEdicao(id, titulo, disciplina, professor, descricao, data_entrega) {
     idTarefaEmEdicao = id;
     document.getElementById('titulo').value = titulo;
     document.getElementById('disciplina').value = disciplina;
+    document.getElementById('professor').value = professor; // <--- LINHA NOVA
     document.getElementById('descricao').value = descricao;
     document.getElementById('data_entrega').value = data_entrega;
     

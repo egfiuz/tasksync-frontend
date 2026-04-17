@@ -138,9 +138,11 @@
         <p id="mensagem_boas_vindas"></p>
         
         <form id="form_tarefa">
-            <input type="text" id="titulo" placeholder="Título (ex: Projeto Integrador)" required>
-            <input type="text" id="disciplina" placeholder="Disciplina (ex: Banco de Dados)" required>
-            <textarea id="descricao" placeholder="Descrição da entrega..." required style="resize: vertical; min-height: 80px;"></textarea>
+            <input type="text" id="titulo" placeholder="Título da entrega" required>
+            <input type="text" id="disciplina" placeholder="Disciplina (ex: Estrutura de Dados)" required>
+            <input type="text" id="professor" placeholder="Nome do Professor" required>
+            <textarea id="descricao" placeholder="Descrição da tarefa..."></textarea>
+            <label for="data_entrega">Data de Entrega:</label>
             <input type="date" id="data_entrega" required>
             <button type="submit">Salvar Tarefa</button>
         </form>
